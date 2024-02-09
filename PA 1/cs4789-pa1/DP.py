@@ -60,7 +60,7 @@ class DynamicProgramming:
         """
         # TODO 1
         # Placeholder, replace with your code.
-        return np.zeros((self.nStates, self.nActions))
+        return (self.R + np.dot(self.P, V_next)).T
 
     def dynamicProgramming(self):
         """
@@ -72,6 +72,20 @@ class DynamicProgramming:
         """
         # TODO 2
         # Placeholder, replace with your code.
+        # Initialize the policy and value function matrices
         pi = np.zeros((self.horizon, self.nStates))
         V = np.zeros((self.horizon, self.nStates))
+
+        # Iterate backward through the timesteps
+        for t in range(self.horizon - 1, -1, -1):
+            # When t = H - 1, we need to compute Q_H from V_H = 0
+            if t == self.horizon - 1:
+                Q_t = self.computeQfromV(np.zeros(self.nStates))
+            else:
+                Q_t = self.computeQfromV(V[t + 1])
+
+            # Fill in optimal policy and value function
+            pi[t] = np.argmax(Q_t, axis=1)
+            V[t] = Q_t[np.arange(self.nStates), pi[t]]
+
         return pi, V
