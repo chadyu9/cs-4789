@@ -86,6 +86,6 @@ class DynamicProgramming:
 
             # Fill in optimal policy and value function
             pi[t] = np.argmax(Q_t, axis=1)
-            V[t] = Q_t[np.arange(self.nStates), pi[t]]
+            V[t] = Q_t[np.arange(self.nStates), pi[t].astype(np.int32)]
 
         return pi, V

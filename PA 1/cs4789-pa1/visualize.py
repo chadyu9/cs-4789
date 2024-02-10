@@ -221,8 +221,12 @@ class Visualize:
     def DP_on_keyboard(self, event, V, pi, fig, a_grid, b_grid, a_dic, b_dic):
         if event.key == "right":
             self.iteration += 1
-            self.pi = pi[self.iteration]
-            self.V = V[self.iteration]
+            if self.iteration >= len(pi) - 1:
+                index = len(pi) - 1
+            else:
+                index = self.iteration
+            self.pi = pi[index]
+            self.V = V[index]
 
             V_data = np.reshape(self.V[:-1], (4, 4))
             a_grid.set_array(V_data)
@@ -237,17 +241,10 @@ class Visualize:
             for (i, j), z in np.ndenumerate(policy_data):
                 b_dic[(i, j)].set_text(self.arrows[z])
 
-            fig.suptitle(f"Value Function and Policy on {self.iteration}")
+            fig.suptitle(f"Value Function and Policy on t={index}")
 
             fig.canvas.flush_events()
             fig.canvas.draw()
-
-    def visualize_IL_policy(self, pi):
-        """
-        Visualizes a particular policy learned using IL.
-        """
-        V, _, _ = self.DP.approxPolicyEvaluation(pi)
-        self.visualize_V_and_Pi(V[0], pi[0])
 
 
 if __name__ == "__main__":
