@@ -123,18 +123,76 @@ class LQRController:
             ret (list): A list, [(K_0, k_0), (K_1, k_1), ..., (K_{T-1}, k_{T-1})]
             and the shape of K_t is (n_a, n_s), the shape of k_t is (n_a,)
         """
-        #TODO
+        # TODO
         N_s = s_star.shape[0]
         N_a = a_star.shape[0]
 
         # get A, B, Q, R, M, q, r
+        A, B, Q, R, M, q, r = self.local_controller.compute_local_expansions(
+            s_star, a_star
+        )
 
         # Create H block and make PD
+        H = np.concatenate((np.concatenate((Q, M.T)), np.concatenate((M, R))), axis=1)
+        # When there is an eigenvalue that is not positive, force H to be PD
+        if not np.all(np.linalg.eigvals(H) > 0):
+            H_eval, H_evec = np.linalg.eig(H)
+            H = sum(
+                [
+                    (
+                        H_eval[i] * np.outer(H_evec[i], H_evec[i])
+                        if H_eval[i] > 0
+                        else np.zeros((N_s + N_a, N_s + N_a))
+                    )
+                    + 1e-5 * np.eye(N_s + N_a)
+                    for i in range(N_s + N_a)
+                ]
+            )
 
-        # Extract updated Q_2, M_2, R_2, q_2, r_2
+        # Extract updated Q_2, M, R_2, q_2, r_2, b, m
+        Q, R, M = H[:N_s, :N_s], H[N_s:, N_s:], H[:N_s, N_s:]
+        Q_2, R_2, q_2, r_2, b, m = (
+            Q / 2,
+            R / 2,
+            (q.T - s_star.T @ Q - a_star.T @ M.T).T,
+            (r.T - a_star.T @ R - s_star.T @ M).T,
+            self.local_controller.c(s_star, a_star)
+            + 0.5 * (s_star.T @ Q / 2 @ s_star + a_star.T @ R @ a_star)
+            + s_star.T @ M @ a_star
+            - q.T @ s_star
+            - r.T @ a_star,
+            (self.local_controller.f(s_star, a_star) - A @ s_star - B @ a_star).reshape(
+                -1, 1
+            ),
+        )
 
         # Compute K, k with base step time t = T-1
+        policy = [(-0.5 * np.linalg.solve(R_2, M.T), -0.5 * np.linalg.solve(R_2, r_2))]
+
+        # Compute parameters of V_{T-1}^{star}
+        (
+            P,
+            y,
+            p,
+        ) = (
+            Q_2 - 0.25 * M @ np.linalg.solve(R_2, M.T),
+            (q_2.T - 0.5 * r.T @ np.linalg.solve(R_2, M.T)).T,
+            (b - 0.25 * r.T @ np.linalg.solve(R_2, r_2)).flatten(),
+        )
+
+        # Loop through other time steps inductively
+        for _ in range(T - 2, -1, -1):
+            # Compute parameters of Q_t^{star}
+            C, D, E, f, g, h = self.compute_Q_params(
+                A, B, Q_2, R_2, M, q_2, r_2, m, b, P, y, p
+            )
+
+            # Compute K_t, k_t and add it to policy list
+            K_t, k_t = self.compute_policy(D=D, E=E, g=g)
+            policy = [(K_t, k_t)] + policy
+
+            # Compute parameters of V_t^{star}
+            P, y, p = self.compute_V_params(C=C, D=D, E=E, f=f, g=g, h=h, K=K_t, k=k_t)
 
         # return policy
-        pass
-
+        return policy

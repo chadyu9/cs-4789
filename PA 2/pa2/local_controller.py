@@ -70,4 +70,14 @@ class LocalController:
             c = self.c
 
         # TODO
-        pass
+        return (
+            jacobian(lambda x: f(x, a), s),
+            jacobian(lambda x: f(s, x), a),
+            hessian(lambda x: c(x, a), s),
+            hessian(lambda x: c(s, x), a),
+            hessian(lambda x: f(x[: len(s)], x[len(s) :]), np.concatenate((s, a)))[
+                : len(s), len(s) :
+            ],
+            gradient(lambda x: c(x, a), s).reshape(-1, 1),
+            gradient(lambda x: c(s, x), a).reshape(-1, 1),
+        )
