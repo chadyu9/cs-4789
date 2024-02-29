@@ -134,20 +134,18 @@ class LQRController:
 
         # Create H block and make PD
         H = np.concatenate((np.concatenate((Q, M.T)), np.concatenate((M, R))), axis=1)
-        # When there is an eigenvalue that is not positive, force H to be PD
-        if not np.all(np.linalg.eigvals(H) > 0):
-            H_eval, H_evec = np.linalg.eig(H)
-            H = sum(
-                [
-                    (
-                        H_eval[i] * np.outer(H_evec[i], H_evec[i])
-                        if H_eval[i] > 0
-                        else np.zeros((N_s + N_a, N_s + N_a))
-                    )
-                    + 1e-5 * np.eye(N_s + N_a)
-                    for i in range(N_s + N_a)
-                ]
-            )
+        H_eval, H_evec = np.linalg.eig(H)
+        H = sum(
+            [
+                (
+                    H_eval[i] * np.outer(H_evec[i], H_evec[i])
+                    if H_eval[i] > 0
+                    else np.zeros((N_s + N_a, N_s + N_a))
+                )
+                + 1e-5 * np.eye(N_s + N_a)
+                for i in range(N_s + N_a)
+            ]
+        )
 
         # Extract updated Q_2, M, R_2, q_2, r_2, b, m
         Q, R, M = H[:N_s, :N_s], H[N_s:, N_s:], H[:N_s, N_s:]
@@ -157,7 +155,7 @@ class LQRController:
             (q.T - s_star.T @ Q - a_star.T @ M.T).T,
             (r.T - a_star.T @ R - s_star.T @ M).T,
             self.local_controller.c(s_star, a_star)
-            + 0.5 * (s_star.T @ Q / 2 @ s_star + a_star.T @ R @ a_star)
+            + 0.5 * (s_star.T @ (Q / 2) @ s_star + a_star.T @ R @ a_star)
             + s_star.T @ M @ a_star
             - q.T @ s_star
             - r.T @ a_star,
@@ -167,7 +165,12 @@ class LQRController:
         )
 
         # Compute K, k with base step time t = T-1
-        policy = [(-0.5 * np.linalg.solve(R_2, M.T), -0.5 * np.linalg.solve(R_2, r_2))]
+        policy = [
+            (
+                -0.5 * np.linalg.inv(R_2) @ M.T,
+                (-0.5 * np.linalg.inv(R_2) @ r_2).flatten(),
+            )
+        ]
 
         # Compute parameters of V_{T-1}^{star}
         (
@@ -175,9 +178,9 @@ class LQRController:
             y,
             p,
         ) = (
-            Q_2 - 0.25 * M @ np.linalg.solve(R_2, M.T),
-            (q_2.T - 0.5 * r.T @ np.linalg.solve(R_2, M.T)).T,
-            (b - 0.25 * r.T @ np.linalg.solve(R_2, r_2)).flatten(),
+            Q_2 - 0.25 * M @ np.linalg.inv(R_2) @ M.T,
+            (q_2.T - 0.5 * r_2.T @ np.linalg.inv(R_2) @ M.T).T,
+            (b - 0.25 * r_2.T @ np.linalg.inv(R_2) @ r_2).flatten(),
         )
 
         # Loop through other time steps inductively
@@ -188,11 +191,11 @@ class LQRController:
             )
 
             # Compute K_t, k_t and add it to policy list
-            K_t, k_t = self.compute_policy(D=D, E=E, g=g)
+            K_t, k_t = self.compute_policy(_, _, _, _, D, E, _, g, _)
             policy = [(K_t, k_t)] + policy
 
             # Compute parameters of V_t^{star}
-            P, y, p = self.compute_V_params(C=C, D=D, E=E, f=f, g=g, h=h, K=K_t, k=k_t)
+            P, y, p = self.compute_V_params(_, _, _, C, D, E, f, g, h, K_t, k_t)
 
         # return policy
         return policy
