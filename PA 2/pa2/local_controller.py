@@ -78,6 +78,6 @@ class LocalController:
             hessian(lambda x: c(x[: len(s)], x[len(s) :]), np.concatenate((s, a)))[
                 : len(s), [len(s)]
             ],
-            gradient(lambda x: c(x, a), s).reshape(-1, 1),
-            gradient(lambda x: c(s, x), a).reshape(-1, 1),
+            gradient(lambda x: c(x, a), s),
+            gradient(lambda x: c(s, x), a),
         )

@@ -41,9 +41,11 @@ if __name__ == "__main__":
                     init_state = [0.0, 0.0, 0, 0.0]
                 elif args.init_s[0] == "close":
                     init_state = [0.0, 0.0, -0.5 * np.pi, 0.0]
+            else:
+                init_state = [0.0, 0.0, 0.5 * np.pi, 0.0]
 
             env = gym.make("CartPoleILQREnv-v0").env
-            obs = env.reset()
+            obs = env.reset(init_state)
             ddp = DDPController(env)
 
             actions = ddp.train(obs)
