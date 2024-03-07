@@ -140,7 +140,7 @@ class DDPController:
         """
         # TODO
         # initialize s_0, a_0
-        (T, n_a), n_s = u_seq.shape, x_seq.shape[1]
+        T, n_a, n_s = len(u_seq), len(u_seq[0]), len(x_seq[0])
         x_seq_hat, u_seq_hat = np.zeros((T + 1, n_s)), np.zeros((T, n_a))
         x_seq_hat[0] = x_seq[0]
 
