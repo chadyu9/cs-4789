@@ -1,4 +1,4 @@
-from finite_difference_method import gradient, hessian
+from pa2.finite_difference_method import gradient, hessian
 import numpy as np
 from pa2.local_controller import LocalController
 from tqdm import tqdm
