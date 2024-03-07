@@ -1,5 +1,5 @@
 import numpy as np
-from finite_difference_method import gradient, jacobian, hessian
+from pa2.finite_difference_method import gradient, jacobian, hessian
 
 
 class LocalController:
