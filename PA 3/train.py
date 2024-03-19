@@ -47,7 +47,7 @@ def experiment(args):
             with torch.no_grad():
                 eps = utils.get_eps(args.eps, i)
                 # TODO: Collect the action from the policy.
-                pass
+                action = network.get_action(ob, eps)
 
             # Step the environment, convert everything to torch tensors
             n_ob, rew, done, _ = env.step(action)
@@ -57,7 +57,7 @@ def experiment(args):
             rew = torch.tensor([rew])
 
             # TODO: Add new experience to replay buffer.
-            pass
+            buffer.add_experience(ob, action, rew, n_ob, done)
 
             ob = n_ob
 
@@ -69,20 +69,26 @@ def experiment(args):
                     #   Make sure to 'zero_grad' the optimizer before performing gradient descent.
 
                     # SAMPLE FROM BUFFER HERE
-                    pass
+                    states, actions, rewards, next_states, dones = buffer.sample(
+                        args.batch_size
+                    )
 
                     # COMPUTE Q VALUES HERE
-                    pass
+                    qs = network(states).gather(1, actions.unsqueeze(1)).squeeze()
 
                     # COMPUTE TARGET Q VALUES FROM BATCH HERE
                     if args.target:
-                        pass
+                        target_qs = target_network.get_targets(
+                            rewards, next_states, dones
+                        )
                     else:
-                        pass
+                        target_qs = network.get_targets(rewards, next_states, dones)
 
                     # GRADIENT DESCENT HERE
-                    loss = torch.tensor(0.0)
-                    pass
+                    optimizer.zero_grad()
+                    loss = F.mse_loss(qs, target_qs)
+                    loss.backward()
+                    optimizer.step()
 
             if done:
                 # we are done, so we break out of the for loop here
@@ -91,7 +97,8 @@ def experiment(args):
 
         # TODO: Update target based on args.target_update_freq.
         # See 'utils.py' and argparse for more information.
-        pass
+        if args.target and (i + 1) % args.target_update_freq == 0:
+            utils.update_target(network, target_network, args.tau)
 
     # save final agent
     save_path = args.save_path + "_" + args.env.lower() + ".pt"

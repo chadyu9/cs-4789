@@ -28,7 +28,8 @@ def update_target(net, target_net, tau):
     # TODO: Update the target parameters using a soft update given by the parameter tau.
     # We want the following update to happen:
     #    θ_target = τ * θ_current + (1 - τ) * θ_target
-    pass
+    for target_param, param in zip(target_net.parameters(), net.parameters()):
+        target_param.data = tau * param.data + (1 - tau) * target_param.data
 
 
 def get_eps(eps_param, t):
