@@ -16,7 +16,7 @@ def test_agent(agent_path, env):
         reward = 0
 
         while not done:
-            if 'google.cloud' not in sys.modules:  # env.render() will not work in colab
+            if "google.cloud" not in sys.modules:  # env.render() will not work in colab
                 env.render()
             qs = agent(torch.from_numpy(ob).float())
             a = qs.argmax().numpy()
@@ -30,20 +30,20 @@ def test_agent(agent_path, env):
         lengths.append(length)
         rewards.append(reward)
 
-    print(f'average episode length: {np.mean(lengths)}')
-    print(f'average reward incurred: {np.mean(rewards)}')
+    print(f"average episode length: {np.mean(lengths)}")
+    print(f"average reward incurred: {np.mean(rewards)}")
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description='test-function')
-    parser.add_argument('--env', default='CartPole-v0', help='name of environment')
+    parser = argparse.ArgumentParser(description="test-function")
+    parser.add_argument("--env", default="CartPole-v0", help="name of environment")
     args = parser.parse_args()
     return args
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = get_args()
     env = gym.make(args.env)
     env.seed(0)
-    agent_path = f'./trained_agent_{args.env.lower()}.pt'
+    agent_path = f"./trained_agent_{args.env.lower()}.pt"
     test_agent(agent_path, env)
