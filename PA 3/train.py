@@ -54,7 +54,7 @@ def experiment(args):
 
             action = torch.tensor(action)
             n_ob = torch.from_numpy(n_ob).float()
-            rew = torch.tensor([rew])
+            rew = torch.tensor([rew]).float()
 
             # TODO: Add new experience to replay buffer.
             buffer.add_experience(ob, action, rew, n_ob, done)

@@ -26,7 +26,7 @@ class QNetwork(nn.Module):
         return (
             np.random.choice(self.network[-1].out_features)
             if np.random.rand() < eps
-            else torch.argmax(self.forward(state))
+            else torch.argmax(self.forward(state)).item()
         )
 
     @torch.no_grad()
