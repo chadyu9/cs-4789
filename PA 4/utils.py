@@ -74,19 +74,38 @@ def compute_fisher_matrix(grads, lamb=1e-3):
     """
 
     # TODO
-    pass
+    return 1 / len(grads) * sum(
+        [1 / len(trj) * sum([np.dot(grad, grad.T) for grad in trj]) for trj in grads]
+    ) + lamb * np.eye(grads[0][0].shape[0])
 
 
 def compute_value_gradient(grads, rewards):
     """computes the value function gradient with respect to the sampled gradients and rewards
 
-    :param grads: ist of list of gradients, where each sublist represents a trajectory
+    :param grads: list of list of gradients, where each sublist represents a trajectory
     :param rewards: list of list of rewards, where each sublist represents a trajectory
     :return: value function gradient with respect to theta (shape d x 1)
     """
 
     # TODO
-    pass
+    b = 1 / len(rewards) * sum([sum(reward) for reward in rewards])
+    return (
+        1
+        / len(grads)
+        * sum(
+            [
+                1
+                / len(grad_trj)
+                * sum(
+                    [
+                        grad_trj[i] * (sum(reward_trj[i:]) - b)
+                        for i in range(len(grad_trj))
+                    ]
+                )
+                for grad_trj, reward_trj in zip(grads, rewards)
+            ]
+        )
+    )
 
 
 def compute_eta(delta, fisher, v_grad):
@@ -99,7 +118,7 @@ def compute_eta(delta, fisher, v_grad):
     """
 
     # TODO
-    pass
+    return np.sqrt(delta / (v_grad.T @ np.linalg.solve(fisher, v_grad) + 1e-6))
 
 
 def get_args():
