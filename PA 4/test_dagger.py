@@ -32,7 +32,7 @@ def test(args):
         reward = 0
 
         while not done:
-            env.render()
+            # env.render()
             qs = model.get_logits(torch.from_numpy(ob).float()[states])
             a = qs.argmax().numpy()
 
