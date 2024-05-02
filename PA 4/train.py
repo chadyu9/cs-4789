@@ -91,7 +91,7 @@ def train(N, T, delta, lamb=1e-3):
 if __name__ == "__main__":
     np.random.seed(1234)
     theta, episode_rewards = train(N=100, T=20, delta=1e-2)
-    theta_dir = os.path.join(os.path.dirname(__file__), "learned_policies/NPG")
+    theta_dir = "./learned_policies/NPG"
     os.makedirs(theta_dir, exist_ok=True)
     np.save(os.path.join(theta_dir, "expert_theta.npy"), theta)
 
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     plt.title("avg rewards per timestep")
     plt.xlabel("timestep")
     plt.ylabel("avg rewards")
-    plot_dir = os.path.join(os.path.dirname(__file__), "plots")
+    plot_dir = "./plots"
     os.makedirs(plot_dir, exist_ok=True)
     plt.savefig(os.path.join(plot_dir, "rewards"))
     plt.show()

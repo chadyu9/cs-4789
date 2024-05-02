@@ -1,6 +1,7 @@
 from sklearn.kernel_approximation import RBFSampler
 import numpy as np
 import argparse
+import os
 
 rbf_feature = RBFSampler(gamma=1, random_state=12345)
 
